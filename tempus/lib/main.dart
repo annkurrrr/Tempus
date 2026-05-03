@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/session.dart';
 import 'services/session_storage.dart';
+import 'services/timer_notification_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/sessions_screen.dart';
@@ -10,6 +11,7 @@ import 'screens/goals_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  TimerNotificationService.init();
   runApp(const MyApp());
 }
 
@@ -46,8 +48,9 @@ class MyAppState extends State<MyApp> {
 
   /// Toggles between light and dark mode and persists the choice.
   Future<void> toggleTheme() async {
-    final newMode =
-        _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    final newMode = _themeMode == ThemeMode.dark
+        ? ThemeMode.light
+        : ThemeMode.dark;
     setState(() => _themeMode = newMode);
     _updateSystemUI();
     final prefs = await SharedPreferences.getInstance();
@@ -58,15 +61,18 @@ class MyAppState extends State<MyApp> {
 
   void _updateSystemUI() {
     final isDarkNow = _themeMode == ThemeMode.dark;
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness:
-          isDarkNow ? Brightness.light : Brightness.dark,
-      systemNavigationBarColor:
-          isDarkNow ? const Color(0xFF141414) : Colors.white,
-      systemNavigationBarIconBrightness:
-          isDarkNow ? Brightness.light : Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDarkNow ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: isDarkNow
+            ? const Color(0xFF141414)
+            : Colors.white,
+        systemNavigationBarIconBrightness: isDarkNow
+            ? Brightness.light
+            : Brightness.dark,
+      ),
+    );
   }
 
   @override
@@ -148,8 +154,7 @@ class _AppShellState extends State<_AppShell> {
 
     if (_loading) {
       return const Scaffold(
-        body: Center(
-            child: CircularProgressIndicator(color: AppTheme.primary)),
+        body: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
       );
     }
 

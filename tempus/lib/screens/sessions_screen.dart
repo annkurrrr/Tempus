@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/session.dart';
 import '../services/session_storage.dart';
 import '../theme/app_theme.dart';
-import '../widgets/session_list_item.dart';
+import '../widgets/session_grid_card.dart';
 import '../widgets/session_detail_sheet.dart';
 
-/// Screen listing all saved sessions.
+/// Screen displaying all saved sessions in a 3-column grid.
 class SessionsScreen extends StatelessWidget {
   final List<Session> sessions;
   final VoidCallback onSessionDeleted;
@@ -38,6 +38,9 @@ class SessionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = TempusColors.of(context);
+    // Reversed so newest sessions come first.
+    final reversed = sessions.reversed.toList();
+
     return SafeArea(
       child: Column(
         children: [
@@ -81,30 +84,35 @@ class SessionsScreen extends StatelessWidget {
           Expanded(
             child: sessions.isEmpty
                 ? _EmptyState()
-                : ListView.builder(
+                : GridView.builder(
                     physics: const BouncingScrollPhysics(),
-                    padding:
-                        const EdgeInsets.only(top: 8, bottom: 24),
-                    itemCount: sessions.length,
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.85,
+                    ),
+                    itemCount: reversed.length,
                     itemBuilder: (context, index) {
-                      final session =
-                          sessions[sessions.length - 1 - index];
+                      final session = reversed[index];
                       return TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0, end: 1),
                         duration: Duration(
-                            milliseconds: 300 + (index * 50)),
+                            milliseconds: 300 + (index * 30)),
                         curve: Curves.easeOut,
                         builder: (context, value, child) {
                           return Opacity(
                             opacity: value,
                             child: Transform.translate(
                               offset:
-                                  Offset(0, 20 * (1 - value)),
+                                  Offset(0, 16 * (1 - value)),
                               child: child,
                             ),
                           );
                         },
-                        child: SessionListItem(
+                        child: SessionGridCard(
                           session: session,
                           onTap: () => SessionDetailSheet.show(
                             context,

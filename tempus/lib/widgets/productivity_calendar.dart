@@ -96,9 +96,14 @@ class _SquareDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = TempusColors.of(context);
-    final color = level == -1
-        ? c.surfaceLighter.withValues(alpha: 0.4)
-        : AppTheme.levelColor(level, colors: c);
+    Color color;
+    if (level == -1) {
+      color = c.surfaceLighter.withValues(alpha: 0.4);
+    } else if (level == 0) {
+      color = c.level0;
+    } else {
+      color = AppTheme.levelColor(level, colors: c);
+    }
 
     final dot = AnimatedContainer(
       duration: Duration(milliseconds: 300 + (index % 40) * 15),
@@ -150,7 +155,7 @@ class _Legend extends StatelessWidget {
             height: 14,
             margin: const EdgeInsets.symmetric(horizontal: 2),
             decoration: BoxDecoration(
-              color: AppTheme.levelColor(i, colors: c),
+              color: i == 0 ? c.level0 : AppTheme.levelColor(i, colors: c),
               borderRadius: BorderRadius.circular(3),
             ),
           ),

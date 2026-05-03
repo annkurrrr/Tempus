@@ -123,7 +123,9 @@ class AppTheme {
       case 4:
         return level4;
       default:
-        return colors?.level0 ?? TempusColors.dark.level0;
+        // For text/badges, use textSecondary so it's readable.
+        // level0 is reserved for the calendar grid squares.
+        return colors?.textSecondary ?? TempusColors.dark.textSecondary;
     }
   }
 

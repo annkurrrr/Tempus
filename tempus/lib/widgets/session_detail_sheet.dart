@@ -221,18 +221,14 @@ class _InfoRow extends StatelessWidget {
           Text(label,
               style: TextStyle(color: c.textSecondary, fontSize: 14)),
           const Spacer(),
-          Flexible(
-            child: Text(
-              value,
-              style: TextStyle(
-                color: c.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
+          Text(
+            value,
+            style: TextStyle(
+              color: c.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
+            textAlign: TextAlign.right,
           ),
         ],
       ),

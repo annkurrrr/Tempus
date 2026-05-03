@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../main.dart';
 import '../models/session.dart';
 import '../services/session_storage.dart';
+import '../services/timer_notification_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/timer_display.dart';
 import '../widgets/timer_controls.dart';
@@ -35,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen>
   DateTime? _segmentStart;
 
   late AnimationController _pulseController;
+  bool _permissionsRequested = false;
 
   @override
   void initState() {
@@ -45,14 +48,28 @@ class _HomeScreenState extends State<HomeScreen>
       duration: const Duration(seconds: 2),
     );
     _restoreTimerState();
+
+    // Listen for data from the foreground task (e.g. pause button press).
+    FlutterForegroundTask.addTaskDataCallback(_onReceiveTaskData);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
     _timer?.cancel();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  /// Called when the foreground-service isolate sends data back.
+  void _onReceiveTaskData(Object data) {
+    if (data is Map) {
+      final action = data['action'];
+      if (action == 'pause' && _isRunning) {
+        _pause();
+      }
+    }
   }
 
   @override
@@ -61,10 +78,33 @@ class _HomeScreenState extends State<HomeScreen>
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.detached) {
       _persistTimerState();
+      // Start the foreground notification if the timer is running.
+      if (_isRunning) {
+        _startForegroundNotification();
+      }
     } else if (state == AppLifecycleState.resumed) {
+      // Stop the foreground notification when the user returns.
+      TimerNotificationService.stopNotification();
       _recalculateElapsed();
     }
   }
+
+  // ── Foreground notification helpers ──────────────────────────────────
+
+  Future<void> _requestPermissionsIfNeeded() async {
+    if (_permissionsRequested) return;
+    _permissionsRequested = true;
+    await TimerNotificationService.requestPermissions();
+  }
+
+  Future<void> _startForegroundNotification() async {
+    final nextNum = widget.sessions.length + 1;
+    await TimerNotificationService.startNotification(
+      sessionNumber: nextNum,
+    );
+  }
+
+  // ── Persistence helpers ─────────────────────────────────────────────
 
   Future<void> _restoreTimerState() async {
     final saved = await SessionStorage.loadTimerState();
@@ -84,6 +124,12 @@ class _HomeScreenState extends State<HomeScreen>
         _elapsed = Duration(seconds: saved.accumulatedSeconds);
       }
     });
+
+    // If the timer was running when the app was killed, the foreground service
+    // may still be active — stop it now that the UI is back.
+    if (_isRunning) {
+      TimerNotificationService.stopNotification();
+    }
   }
 
   Future<void> _persistTimerState() async {
@@ -110,6 +156,8 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
+  // ── Timer actions ───────────────────────────────────────────────────
+
   void _startTicking() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -118,6 +166,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _start() {
+    _requestPermissionsIfNeeded();
     final now = DateTime.now();
     setState(() {
       _hasStarted = true;
@@ -145,9 +194,12 @@ class _HomeScreenState extends State<HomeScreen>
       _segmentStart = null;
     });
     _persistTimerState();
+    // Stop the foreground notification when paused.
+    TimerNotificationService.stopNotification();
   }
 
   void _resume() {
+    _requestPermissionsIfNeeded();
     final now = DateTime.now();
     setState(() {
       _isRunning = true;
@@ -301,6 +353,8 @@ class _HomeScreenState extends State<HomeScreen>
     return '$h:$m:$s';
   }
 
+  // ── Build ───────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final c = TempusColors.of(context);
@@ -313,7 +367,6 @@ class _HomeScreenState extends State<HomeScreen>
         child: Column(
           children: [
             const SizedBox(height: 8),
-            // Title row with theme toggle
             Row(
               children: [
                 const Spacer(),
@@ -330,7 +383,6 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 const Spacer(),
-                // Theme toggle
                 GestureDetector(
                   onTap: appState.toggleTheme,
                   child: AnimatedContainer(

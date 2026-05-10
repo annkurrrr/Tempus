@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_quick_timer_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/widget_bg_dark"
+    android:gravity="center_vertical">
+
+    <!-- Status label -->
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No active session"
+        android:textColor="#B0B0B0"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif-medium" />
+
+    <!-- Timer display -->
+    <TextView
+        android:id="@+id/tv_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00:00"
+        android:textColor="#F5F5F5"
+        android:textSize="32sp"
+        android:fontFamily="sans-serif-light"
+        android:letterSpacing="0.1"
+        android:layout_marginTop="4dp" />
+
+    <!-- Bottom row: streak + play button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="8dp">
+
+        <!-- Streak -->
+        <TextView
+            android:id="@+id/tv_streak"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="🔥 0 day streak"
+            android:textColor="#707070"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif" />
+
+        <!-- Session badge -->
+        <TextView
+            android:id="@+id/tv_session_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#00C853"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:background="@drawable/widget_badge_bg"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

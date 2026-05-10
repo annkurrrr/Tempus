@@ -21,8 +21,10 @@ class StreakCounter extends StatelessWidget {
       ..sort((a, b) => b.compareTo(a));
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
+    final yesterday = todayDate.subtract(const Duration(days: 1));
     int count = 0;
-    DateTime expected = todayDate;
+    // Start from today; if no session today, start from yesterday.
+    DateTime expected = dates.contains(todayDate) ? todayDate : yesterday;
     for (final d in dates) {
       if (d == expected) {
         count++;

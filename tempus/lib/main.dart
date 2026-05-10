@@ -9,10 +9,12 @@ import 'screens/home_screen.dart';
 import 'screens/sessions_screen.dart';
 import 'screens/goals_screen.dart';
 import 'screens/schedule_screen.dart';
+import 'services/widget_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   TimerNotificationService.init();
+  WidgetService.init();
   runApp(const MyApp());
 }
 
@@ -126,6 +128,8 @@ class _AppShellState extends State<_AppShell> {
       _sessions = sessions;
       _loading = false;
     });
+    // Push fresh data to home screen widgets.
+    WidgetService.updateWidgets(sessions: sessions);
   }
 
   Widget _buildBody() {

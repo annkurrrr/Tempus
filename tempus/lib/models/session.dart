@@ -72,4 +72,17 @@ class Session {
 
   factory Session.decode(String source) =>
       Session.fromJson(jsonDecode(source) as Map<String, dynamic>);
+
+  /// Creates a copy with optional field overrides.
+  Session copyWith({int? sessionNumber}) {
+    return Session(
+      sessionNumber: sessionNumber ?? this.sessionNumber,
+      sessionName: sessionName,
+      comment: comment,
+      startTime: startTime,
+      endTime: endTime,
+      totalDuration: totalDuration,
+      date: date,
+    );
+  }
 }

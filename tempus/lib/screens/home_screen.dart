@@ -5,10 +5,12 @@ import '../main.dart';
 import '../models/session.dart';
 import '../services/session_storage.dart';
 import '../services/timer_notification_service.dart';
+import '../services/widget_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/timer_display.dart';
 import '../widgets/timer_controls.dart';
 import '../widgets/streak_counter.dart';
+import '../widgets/weekly_stats.dart';
 import '../widgets/productivity_calendar.dart';
 
 /// The main home screen with the timer, streak counter, and productivity calendar.
@@ -154,6 +156,8 @@ class _HomeScreenState extends State<HomeScreen>
       _elapsed =
           Duration(seconds: _accumulatedBeforePause + segmentSeconds);
     });
+    // Push live elapsed time to the home screen widget.
+    WidgetService.updateTimerElapsed(_formatDuration(_elapsed));
   }
 
   // ── Timer actions ───────────────────────────────────────────────────
@@ -179,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen>
     _pulseController.repeat(reverse: true);
     _startTicking();
     _persistTimerState();
+    _updateWidget('running');
   }
 
   void _pause() {
@@ -196,6 +201,7 @@ class _HomeScreenState extends State<HomeScreen>
     _persistTimerState();
     // Stop the foreground notification when paused.
     TimerNotificationService.stopNotification();
+    _updateWidget('paused');
   }
 
   void _resume() {
@@ -208,6 +214,7 @@ class _HomeScreenState extends State<HomeScreen>
     _pulseController.repeat(reverse: true);
     _startTicking();
     _persistTimerState();
+    _updateWidget('running');
   }
 
   void _save() {
@@ -353,6 +360,17 @@ class _HomeScreenState extends State<HomeScreen>
     return '$h:$m:$s';
   }
 
+  /// Pushes current timer state to home screen widgets.
+  void _updateWidget(String status) {
+    final nextNum = widget.sessions.length + 1;
+    WidgetService.updateWidgets(
+      sessions: widget.sessions,
+      timerStatus: status,
+      timerElapsed: _formatDuration(_elapsed),
+      currentSessionNum: nextNum,
+    );
+  }
+
   // ── Build ───────────────────────────────────────────────────────────
 
   @override
@@ -432,6 +450,16 @@ class _HomeScreenState extends State<HomeScreen>
                 borderRadius: BorderRadius.circular(16),
               ),
               child: StreakCounter(sessions: widget.sessions),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: c.cardBg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: WeeklyStats(sessions: widget.sessions),
             ),
             const SizedBox(height: 16),
             Container(

@@ -38,11 +38,16 @@ class SessionStorage {
     return sessions.last.sessionNumber + 1;
   }
 
-  /// Deletes a session by its session number.
+  /// Deletes a session by its session number and renumbers the rest
+  /// so there are no gaps (1, 2, 3, …).
   static Future<List<Session>> deleteSession(int sessionNumber) async {
     final prefs = await SharedPreferences.getInstance();
     final sessions = await loadSessions();
     sessions.removeWhere((s) => s.sessionNumber == sessionNumber);
+    // Renumber sequentially.
+    for (int i = 0; i < sessions.length; i++) {
+      sessions[i] = sessions[i].copyWith(sessionNumber: i + 1);
+    }
     final jsonList = sessions.map((e) => e.encode()).toList();
     await prefs.setStringList(_sessionsKey, jsonList);
     return sessions;

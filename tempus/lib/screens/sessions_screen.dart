@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/session.dart';
 import '../services/session_storage.dart';
+import '../services/widget_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/session_grid_card.dart';
 import '../widgets/session_detail_sheet.dart';
@@ -18,8 +19,10 @@ class SessionsScreen extends StatelessWidget {
 
   Future<void> _deleteSession(
       BuildContext context, Session session) async {
-    await SessionStorage.deleteSession(session.sessionNumber);
+    final updatedSessions = await SessionStorage.deleteSession(session.sessionNumber);
     onSessionDeleted();
+    // Refresh home screen widgets with updated data.
+    WidgetService.updateWidgets(sessions: updatedSessions);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -92,7 +95,7 @@ class SessionsScreen extends StatelessWidget {
                       crossAxisCount: 3,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
-                      childAspectRatio: 0.85,
+                      childAspectRatio: 0.75,
                     ),
                     itemCount: reversed.length,
                     itemBuilder: (context, index) {

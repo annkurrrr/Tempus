@@ -260,6 +260,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
     goal.status = status;
     goal.statusChangedAt = DateTime.now();
     await GoalStorage.updateGoal(goal);
+    await GoalStorage.clearSchedule();
     await _load();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -272,6 +273,57 @@ class _GoalsScreenState extends State<GoalsScreen> {
           ),
         ),
       );
+    }
+  }
+
+  /// When "In Progress" is tapped, ask the user if they want to continue
+  /// working on the same goal. If yes, keep it active (pending). If no,
+  /// mark it as in-progress and move it to "Earlier this week".
+  Future<void> _handleInProgress(WeeklyGoal goal) async {
+    final c = TempusColors.of(context);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: c.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Continue this goal?',
+          style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Do you want to keep working on this goal?',
+          style: TextStyle(color: c.textSecondary, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('NO'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('YES, CONTINUE'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      // Keep the goal as-is (still pending / active). No change needed.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Goal stays active — keep going!'),
+            backgroundColor: AppTheme.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } else if (result == false) {
+      // Mark as in-progress and move to "earlier this week".
+      await _markGoal(goal, GoalStatus.inProgress);
     }
   }
 
@@ -381,7 +433,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       onIncomplete: () =>
                           _markGoal(active, GoalStatus.incomplete),
                       onInProgress: () =>
-                          _markGoal(active, GoalStatus.inProgress),
+                          _handleInProgress(active),
                     )
                   : _SetGoalCard(onTap: _setGoal),
             ),

@@ -22,8 +22,7 @@ class GoalStorage {
 
   static Future<void> _saveAll(List<WeeklyGoal> goals) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-        _goalsKey, goals.map((g) => g.encode()).toList());
+    await prefs.setStringList(_goalsKey, goals.map((g) => g.encode()).toList());
   }
 
   /// Adds a new goal and persists.
@@ -55,20 +54,49 @@ class GoalStorage {
     final monday = mondayOf(date);
     final goals = await loadGoals();
     return goals
-        .where((g) =>
-            g.weekStart.year == monday.year &&
-            g.weekStart.month == monday.month &&
-            g.weekStart.day == monday.day)
+        .where(
+          (g) =>
+              g.weekStart.year == monday.year &&
+              g.weekStart.month == monday.month &&
+              g.weekStart.day == monday.day,
+        )
         .toList();
   }
 
   /// Returns all unresolved goals from previous weeks (before [currentMonday]).
   static Future<List<WeeklyGoal>> unresolvedPastGoals(
-      DateTime currentMonday) async {
+    DateTime currentMonday,
+  ) async {
     final goals = await loadGoals();
     return goals
-        .where((g) =>
-            g.weekStart.isBefore(currentMonday) && !g.isResolved)
+        .where((g) => g.weekStart.isBefore(currentMonday) && !g.isResolved)
         .toList();
+  }
+
+  // ── AI Schedule Persistence ───────────────────────────────────────────
+  static const String _scheduleKey = 'tempus_ai_schedule';
+  static const String _scheduleGoalIdKey = 'tempus_ai_schedule_goal_id';
+
+  /// Saves the generated schedule text, linked to a specific goal ID.
+  static Future<void> saveSchedule(String goalId, String schedule) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_scheduleKey, schedule);
+    await prefs.setString(_scheduleGoalIdKey, goalId);
+  }
+
+  /// Loads the saved schedule if it matches the given goal ID.
+  /// Returns null if no schedule exists or it belongs to a different goal.
+  static Future<String?> loadSchedule(String goalId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedGoalId = prefs.getString(_scheduleGoalIdKey);
+    if (savedGoalId != goalId) return null;
+    return prefs.getString(_scheduleKey);
+  }
+
+  /// Clears the saved schedule (called when a goal is resolved).
+  static Future<void> clearSchedule() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_scheduleKey);
+    await prefs.remove(_scheduleGoalIdKey);
   }
 }

@@ -8,6 +8,7 @@ import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/sessions_screen.dart';
 import 'screens/goals_screen.dart';
+import 'screens/schedule_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -143,6 +144,8 @@ class _AppShellState extends State<_AppShell> {
         );
       case 2:
         return const GoalsScreen(key: ValueKey('goals'));
+      case 3:
+        return const ScheduleScreen(key: ValueKey('schedule'));
       default:
         return const SizedBox.shrink();
     }
@@ -190,6 +193,11 @@ class _AppShellState extends State<_AppShell> {
               icon: Icon(Icons.flag_outlined),
               activeIcon: Icon(Icons.flag),
               label: 'Goals',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.auto_awesome_outlined),
+              activeIcon: Icon(Icons.auto_awesome),
+              label: 'Schedule',
             ),
           ],
         ),

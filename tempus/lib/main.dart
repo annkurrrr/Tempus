@@ -4,17 +4,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models/session.dart';
 import 'services/session_storage.dart';
 import 'services/timer_notification_service.dart';
+import 'services/supabase_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/sessions_screen.dart';
 import 'screens/goals_screen.dart';
 import 'screens/schedule_screen.dart';
 import 'services/widget_service.dart';
+import 'auth/auth_gate.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   TimerNotificationService.init();
   WidgetService.init();
+  await SupabaseService.init();
   runApp(const MyApp());
 }
 
@@ -98,7 +101,7 @@ class MyAppState extends State<MyApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: _themeMode,
-      home: const _AppShell(),
+      home: AuthGate(authenticatedBuilder: () => const _AppShell()),
     );
   }
 }

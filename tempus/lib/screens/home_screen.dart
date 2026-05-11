@@ -6,6 +6,7 @@ import '../models/session.dart';
 import '../services/session_storage.dart';
 import '../services/timer_notification_service.dart';
 import '../services/widget_service.dart';
+import '../auth/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/timer_display.dart';
 import '../widgets/timer_controls.dart';
@@ -373,6 +374,40 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ── Build ───────────────────────────────────────────────────────────
 
+  void _confirmLogout(BuildContext context, TempusColors c) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: c.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Sign Out?',
+          style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(color: c.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              AuthService.signOut();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+            ),
+            child: const Text('SIGN OUT'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = TempusColors.of(context);
@@ -387,6 +422,22 @@ class _HomeScreenState extends State<HomeScreen>
             const SizedBox(height: 8),
             Row(
               children: [
+                GestureDetector(
+                  onTap: () => _confirmLogout(context, c),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: c.surfaceLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.logout_rounded,
+                      color: c.textTertiary,
+                      size: 22,
+                    ),
+                  ),
+                ),
                 const Spacer(),
                 const Icon(Icons.hourglass_top_rounded,
                     color: AppTheme.primary, size: 26),

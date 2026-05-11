@@ -39,6 +39,7 @@ dependencies:
   flutter_foreground_task: ^9.2.2
   http: ^1.4.0
   home_widget: ^0.7.0
+  supabase_flutter: ^2.12.4
 
 dev_dependencies:
   flutter_test:

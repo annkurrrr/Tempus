@@ -6,6 +6,7 @@ import '../models/session.dart';
 import '../services/session_storage.dart';
 import '../services/timer_notification_service.dart';
 import '../services/widget_service.dart';
+import '../services/session_sync_service.dart';
 import '../auth/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/timer_display.dart';
@@ -327,6 +328,11 @@ class _HomeScreenState extends State<HomeScreen>
       );
       await SessionStorage.saveSession(session);
       await SessionStorage.clearTimerState();
+
+      // Sync to Supabase (fire-and-forget, don't block UI).
+      SessionSyncService.saveSession(session).catchError((e) {
+        debugPrint('Supabase sync failed: $e');
+      });
 
       setState(() {
         _elapsed = Duration.zero;

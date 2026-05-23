@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/weekly_goal.dart';
+import 'goal_sync_service.dart';
 
-/// Handles persistent storage of weekly goals.
+/// Handles goals access through Supabase and persistent storage for AI schedules.
 class GoalStorage {
-  static const String _goalsKey = 'tempus_weekly_goals';
 
   /// Returns the Monday 00:00 of the week containing [date].
   static DateTime mondayOf(DateTime date) {
@@ -11,42 +12,24 @@ class GoalStorage {
     return d.subtract(Duration(days: d.weekday - 1));
   }
 
-  /// Loads all saved goals, sorted by weekStart (oldest first).
+  /// Loads all saved goals from Supabase, sorted by weekStart (oldest first).
   static Future<List<WeeklyGoal>> loadGoals() async {
-    final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList(_goalsKey) ?? [];
-    final goals = list.map((e) => WeeklyGoal.decode(e)).toList();
-    goals.sort((a, b) => a.weekStart.compareTo(b.weekStart));
-    return goals;
+    return await GoalSyncService.loadGoals();
   }
 
-  static Future<void> _saveAll(List<WeeklyGoal> goals) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_goalsKey, goals.map((g) => g.encode()).toList());
-  }
-
-  /// Adds a new goal and persists.
+  /// Adds a new goal to Supabase.
   static Future<void> addGoal(WeeklyGoal goal) async {
-    final goals = await loadGoals();
-    goals.add(goal);
-    await _saveAll(goals);
+    await GoalSyncService.saveGoal(goal);
   }
 
-  /// Updates an existing goal (matched by id).
+  /// Updates an existing goal (matched by id) in Supabase.
   static Future<void> updateGoal(WeeklyGoal updated) async {
-    final goals = await loadGoals();
-    final idx = goals.indexWhere((g) => g.id == updated.id);
-    if (idx != -1) {
-      goals[idx] = updated;
-      await _saveAll(goals);
-    }
+    await GoalSyncService.updateGoal(updated);
   }
 
-  /// Deletes a goal by id.
+  /// Deletes a goal by id from Supabase.
   static Future<void> deleteGoal(String id) async {
-    final goals = await loadGoals();
-    goals.removeWhere((g) => g.id == id);
-    await _saveAll(goals);
+    await GoalSyncService.deleteGoal(id);
   }
 
   /// Returns all goals for the week containing [date].

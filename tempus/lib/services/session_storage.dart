@@ -1,9 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/session.dart';
+import 'session_sync_service.dart';
 
-/// Handles persistent storage of sessions using SharedPreferences.
+/// Handles session access through Supabase and persistent storage for timer state.
 class SessionStorage {
-  static const String _sessionsKey = 'tempus_sessions';
 
   // ── Timer persistence keys ────────────────────────────────────────────
   static const String _timerRunningKey = 'tempus_timer_running';
@@ -13,21 +13,14 @@ class SessionStorage {
 
   // ── Session CRUD ──────────────────────────────────────────────────────
 
-  /// Loads all saved sessions from local storage, sorted by session number.
+  /// Loads all saved sessions from Supabase.
   static Future<List<Session>> loadSessions() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList = prefs.getStringList(_sessionsKey) ?? [];
-    final sessions = jsonList.map((e) => Session.decode(e)).toList();
-    sessions.sort((a, b) => a.sessionNumber.compareTo(b.sessionNumber));
-    return sessions;
+    return await SessionSyncService.loadSessions();
   }
 
-  /// Saves a new session to local storage and returns the updated list.
+  /// Saves a new session to Supabase and returns the updated list.
   static Future<List<Session>> saveSession(Session session) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList = prefs.getStringList(_sessionsKey) ?? [];
-    jsonList.add(session.encode());
-    await prefs.setStringList(_sessionsKey, jsonList);
+    await SessionSyncService.saveSession(session);
     return loadSessions();
   }
 
@@ -38,19 +31,10 @@ class SessionStorage {
     return sessions.last.sessionNumber + 1;
   }
 
-  /// Deletes a session by its session number and renumbers the rest
-  /// so there are no gaps (1, 2, 3, …).
+  /// Deletes a session by its session number and renumbers the rest in Supabase.
   static Future<List<Session>> deleteSession(int sessionNumber) async {
-    final prefs = await SharedPreferences.getInstance();
-    final sessions = await loadSessions();
-    sessions.removeWhere((s) => s.sessionNumber == sessionNumber);
-    // Renumber sequentially.
-    for (int i = 0; i < sessions.length; i++) {
-      sessions[i] = sessions[i].copyWith(sessionNumber: i + 1);
-    }
-    final jsonList = sessions.map((e) => e.encode()).toList();
-    await prefs.setStringList(_sessionsKey, jsonList);
-    return sessions;
+    await SessionSyncService.deleteSession(sessionNumber);
+    return loadSessions();
   }
 
   // ── Timer State Persistence ───────────────────────────────────────────

@@ -1,57 +1,75 @@
-# Tempus
-
 # Tempus – AI-Assisted Productivity
 
-Tempus is a productivity app that helps you structure your time around meaningful goals.
+Tempus is a sleek, modern productivity app built with Flutter that helps you structure your time around meaningful goals. It rejects the idea of optimizing every single minute, and instead focuses on intentionality—allowing you to track deep work sessions, set weekly goals, and use AI to create realistic schedules.
 
-## Design Philosophy
+## 🌟 Key Features
 
-- **Anti-Productivity:** We reject the idea that you need to optimize every minute.
-  Productivity should enable a meaningful life, not consume it.
+### ⏳ Smart Session Tracking
+- **Foreground Timer:** Track your sessions smoothly even when the app is in the background or screen is off (using `flutter_foreground_task`).
+- **Productivity Levels:** Sessions are visualized in a grid (similar to GitHub contributions), color-coded by duration (from less than 30 mins to 8+ hours).
+- **Streak Counter:** Automatically calculates and tracks your daily working streaks.
 
-- **Intentionality:** The app encourages you to define what matters, reflect on your progress, and take intentional breaks.
+### 🎯 Weekly Goals
+- Set a clear, actionable goal for the week.
+- Unresolved goals from previous weeks are automatically flagged so you can review and mark them as Completed, In Progress, or Incomplete.
 
-- **Lightweight & Fast:** Built with Flutter, optimized for speed and simplicity. No bloat, no unnecessary friction.
+### 🤖 AI Scheduling (Powered by Gemini)
+- Integrate your **Google Gemini API Key** securely on the device.
+- The AI generates dynamic, realistic daily schedules based on your current weekly goal and the day of the week.
 
-## Key Features
+### ☁️ Cloud Sync (Supabase)
+- **Authentication:** Secure Sign Up / Sign In via Supabase Auth.
+- **Real-Time Sync:** Sessions are saved locally for offline access and synced to the cloud via Supabase PostgreSQL Database with Row Level Security (RLS).
 
-### 🎯 Goals
+### 📱 Native Android Home Widgets
+- **Quick Timer Widget:** View your running timer, current session number, and active streak directly on your home screen.
+- **Weekly Progress Widget:** See your total hours, week-over-week changes, and a 7-day bar chart of your productivity.
 
-- Set **weekly goals** with a clear, actionable statement
-- **Settle** goals when you’ve achieved them, marking the week as complete
+## 🛠 Tech Stack
 
-### ⚡ AI Scheduling (Gemini-Powered)
+- **Framework:** Flutter / Dart
+- **Backend / Auth / Database:** Supabase
+- **AI Integration:** Google Gemini API (via HTTP)
+- **Local Storage:** SharedPreferences
+- **Native Integration:** `home_widget` (Android widgets), `flutter_foreground_task` (background timers)
 
-- **AI-generated schedules** that adapt to your life
-- The AI considers **your goal** + **current day** to create realistic plans
-- Built-in API key management — securely store your Gemini key
+## 🚀 Getting Started
 
-### 📅 Sessions
+### Prerequisites
+- Flutter SDK (v3.11.5 or newer)
+- A Supabase Project
+- Google Gemini API Key
 
-- **Automatic session tracking** with start/stop timer
-- Sessions are automatically grouped by **day** and **week**
-- No manual session creation — just start working and let Tempus track it
+### Installation
 
-### 🎨 Beautiful Interface
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/annkurrrr/Tempus.git
+   cd Tempus/tempus
+   ```
 
-- **Dark & light themes** that adapt to your system settings
-- Smooth animations, haptic feedback, and polished transitions
-- Clean, minimalist design that reduces visual clutter
+2. **Install dependencies:**
+   ```bash
+   flutter pub get
+   ```
 
-## Getting Started
+3. **Supabase Setup:**
+   - The app comes pre-configured with a Supabase URL and Anon Key in `lib/services/supabase_service.dart`.
+   - To use your own backend, replace the `_supabaseUrl` and `_supabaseAnonKey` with your own credentials.
+   - Make sure to create the `users` and `sessions` tables with the appropriate Row Level Security (RLS) policies.
 
-1. Clone the repository
-2. Run `flutter pub get`
-3. Build and run on your device
+4. **Run the app:**
+   ```bash
+   flutter run
+   ```
 
-### API Keys
+### Gemini API Key Configuration
+1. Go to [Google AI Studio](https://aistudio.google.com/) to get a free API key.
+2. Open Tempus, navigate to the **Schedule** tab, and enter the key when prompted.
+3. The key is securely stored locally on your device.
 
-Tempus uses Gemini for AI-generated schedules. To enable this feature:
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome!
 
-1. Go to [aistudio.google.com](https://aistudio.google.com) to get a free API key
-2. Open Tempus and enter the key when prompted
-3. The app will automatically use the key for all scheduling tasks
-
-## Authors
-
+## ✍️ Author
 - [Annkurrrr](https://github.com/annkurrrr)

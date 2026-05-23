@@ -29,7 +29,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Future<void> _init() async {
     final hasKey = await ApiKeyStorage.hasApiKey();
-    final goals = await GoalStorage.loadGoals();
+    final goals = GoalStorage.loadCachedGoals();
     final monday = GoalStorage.mondayOf(DateTime.now());
     final thisWeek = goals.where(
       (g) =>

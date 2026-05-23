@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/weekly_goal.dart';
 import 'goal_sync_service.dart';
+import 'local_cache_service.dart';
 
-/// Handles goals access through Supabase and persistent storage for AI schedules.
+/// Handles goals access through local cache first, then Supabase.
 class GoalStorage {
 
   /// Returns the Monday 00:00 of the week containing [date].
@@ -12,30 +13,58 @@ class GoalStorage {
     return d.subtract(Duration(days: d.weekday - 1));
   }
 
-  /// Loads all saved goals from Supabase, sorted by weekStart (oldest first).
-  static Future<List<WeeklyGoal>> loadGoals() async {
-    return await GoalSyncService.loadGoals();
+  /// Instantly loads goals from the local cache.
+  static List<WeeklyGoal> loadCachedGoals() {
+    return LocalCacheService.loadCachedGoals();
   }
 
-  /// Adds a new goal to Supabase.
+  /// Fetches goals from Supabase and updates the local cache.
+  static Future<List<WeeklyGoal>> syncGoals() async {
+    final goals = await GoalSyncService.loadGoals();
+    await LocalCacheService.cacheGoals(goals);
+    return goals;
+  }
+
+  /// Adds a new goal locally and syncs to Supabase.
   static Future<void> addGoal(WeeklyGoal goal) async {
-    await GoalSyncService.saveGoal(goal);
+    final cached = loadCachedGoals();
+    cached.add(goal);
+    await LocalCacheService.cacheGoals(cached);
+
+    GoalSyncService.saveGoal(goal).catchError((e) {
+      debugPrint('Supabase goal save sync failed: $e');
+    });
   }
 
-  /// Updates an existing goal (matched by id) in Supabase.
+  /// Updates an existing goal (matched by id) locally and syncs to Supabase.
   static Future<void> updateGoal(WeeklyGoal updated) async {
-    await GoalSyncService.updateGoal(updated);
+    final cached = loadCachedGoals();
+    final idx = cached.indexWhere((g) => g.id == updated.id);
+    if (idx != -1) {
+      cached[idx] = updated;
+      await LocalCacheService.cacheGoals(cached);
+    }
+
+    GoalSyncService.updateGoal(updated).catchError((e) {
+      debugPrint('Supabase goal update sync failed: $e');
+    });
   }
 
-  /// Deletes a goal by id from Supabase.
+  /// Deletes a goal by id locally and syncs to Supabase.
   static Future<void> deleteGoal(String id) async {
-    await GoalSyncService.deleteGoal(id);
+    final cached = loadCachedGoals();
+    cached.removeWhere((g) => g.id == id);
+    await LocalCacheService.cacheGoals(cached);
+
+    GoalSyncService.deleteGoal(id).catchError((e) {
+      debugPrint('Supabase goal delete sync failed: $e');
+    });
   }
 
-  /// Returns all goals for the week containing [date].
-  static Future<List<WeeklyGoal>> goalsForWeek(DateTime date) async {
+  /// Returns all goals for the week containing [date] from local cache.
+  static List<WeeklyGoal> goalsForWeek(DateTime date) {
     final monday = mondayOf(date);
-    final goals = await loadGoals();
+    final goals = loadCachedGoals();
     return goals
         .where(
           (g) =>
@@ -46,11 +75,11 @@ class GoalStorage {
         .toList();
   }
 
-  /// Returns all unresolved goals from previous weeks (before [currentMonday]).
-  static Future<List<WeeklyGoal>> unresolvedPastGoals(
+  /// Returns all unresolved goals from previous weeks (before [currentMonday]) from local cache.
+  static List<WeeklyGoal> unresolvedPastGoals(
     DateTime currentMonday,
-  ) async {
-    final goals = await loadGoals();
+  ) {
+    final goals = loadCachedGoals();
     return goals
         .where((g) => g.weekStart.isBefore(currentMonday) && !g.isResolved)
         .toList();

@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/session.dart';
 import 'session_sync_service.dart';
+import 'local_cache_service.dart';
 
-/// Handles session access through Supabase and persistent storage for timer state.
+/// Handles session access through local cache first, then Supabase.
 class SessionStorage {
 
   // ── Timer persistence keys ────────────────────────────────────────────
@@ -13,28 +15,57 @@ class SessionStorage {
 
   // ── Session CRUD ──────────────────────────────────────────────────────
 
-  /// Loads all saved sessions from Supabase.
-  static Future<List<Session>> loadSessions() async {
-    return await SessionSyncService.loadSessions();
+  /// Instantly loads sessions from the local cache.
+  static List<Session> loadCachedSessions() {
+    return LocalCacheService.loadCachedSessions();
   }
 
-  /// Saves a new session to Supabase and returns the updated list.
+  /// Fetches sessions from Supabase and updates the local cache.
+  static Future<List<Session>> syncSessions() async {
+    final sessions = await SessionSyncService.loadSessions();
+    await LocalCacheService.cacheSessions(sessions);
+    return sessions;
+  }
+
+  /// Saves a new session locally and syncs to Supabase.
   static Future<List<Session>> saveSession(Session session) async {
-    await SessionSyncService.saveSession(session);
-    return loadSessions();
+    // 1. Save locally for instant UI response
+    final cached = loadCachedSessions();
+    cached.add(session);
+    await LocalCacheService.cacheSessions(cached);
+
+    // 2. Sync to Supabase in background
+    SessionSyncService.saveSession(session).catchError((e) {
+      debugPrint('Supabase save sync failed: $e');
+    });
+
+    return cached;
   }
 
-  /// Returns the next session number (auto-increment).
-  static Future<int> getNextSessionNumber() async {
-    final sessions = await loadSessions();
+  /// Returns the next session number based on local cache.
+  static int getNextSessionNumber() {
+    final sessions = loadCachedSessions();
     if (sessions.isEmpty) return 1;
     return sessions.last.sessionNumber + 1;
   }
 
-  /// Deletes a session by its session number and renumbers the rest in Supabase.
+  /// Deletes a session locally and syncs to Supabase.
   static Future<List<Session>> deleteSession(int sessionNumber) async {
-    await SessionSyncService.deleteSession(sessionNumber);
-    return loadSessions();
+    // 1. Delete locally
+    final cached = loadCachedSessions();
+    cached.removeWhere((s) => s.sessionNumber == sessionNumber);
+    // Renumber locally
+    for (int i = 0; i < cached.length; i++) {
+      cached[i] = cached[i].copyWith(sessionNumber: i + 1);
+    }
+    await LocalCacheService.cacheSessions(cached);
+
+    // 2. Sync to Supabase in background
+    SessionSyncService.deleteSession(sessionNumber).catchError((e) {
+      debugPrint('Supabase delete sync failed: $e');
+    });
+
+    return cached;
   }
 
   // ── Timer State Persistence ───────────────────────────────────────────

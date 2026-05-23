@@ -26,25 +26,38 @@ class _GoalsScreenState extends State<GoalsScreen> {
   }
 
   Future<void> _load() async {
-    final goals = await GoalStorage.loadGoals();
+    // 1. Instant cache load
     setState(() {
-      _allGoals = goals;
+      _allGoals = GoalStorage.loadCachedGoals();
       _loading = false;
     });
+
     if (!_checkedPast) {
       _checkedPast = true;
       _handleUnresolvedPastGoals();
     }
+
+    // 2. Background sync from Supabase
+    try {
+      final synced = await GoalStorage.syncGoals();
+      if (mounted) {
+        setState(() {
+          _allGoals = synced;
+        });
+      }
+    } catch (e) {
+      debugPrint('Goals sync failed: $e');
+    }
   }
 
-  Future<void> _handleUnresolvedPastGoals() async {
-    final unresolved = await GoalStorage.unresolvedPastGoals(_currentMonday);
+  void _handleUnresolvedPastGoals() {
+    final unresolved = GoalStorage.unresolvedPastGoals(_currentMonday);
     if (unresolved.isEmpty || !mounted) return;
     for (final goal in unresolved) {
       if (!mounted) return;
-      await _showMarkPastGoalDialog(goal);
+      _showMarkPastGoalDialog(goal);
     }
-    await _load();
+    _load();
   }
 
   Future<void> _showMarkPastGoalDialog(WeeklyGoal goal) async {

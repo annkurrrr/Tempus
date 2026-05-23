@@ -11,12 +11,14 @@ import 'screens/sessions_screen.dart';
 import 'screens/goals_screen.dart';
 import 'screens/schedule_screen.dart';
 import 'services/widget_service.dart';
+import 'services/local_cache_service.dart';
 import 'auth/auth_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   TimerNotificationService.init();
   WidgetService.init();
+  await LocalCacheService.init();
   await SupabaseService.init();
   runApp(const MyApp());
 }
@@ -126,13 +128,26 @@ class _AppShellState extends State<_AppShell> {
   }
 
   Future<void> _loadSessions() async {
-    final sessions = await SessionStorage.loadSessions();
+    // 1. Instant load from local cache
     setState(() {
-      _sessions = sessions;
+      _sessions = SessionStorage.loadCachedSessions();
       _loading = false;
     });
     // Push fresh data to home screen widgets.
-    WidgetService.updateWidgets(sessions: sessions);
+    WidgetService.updateWidgets(sessions: _sessions);
+
+    // 2. Background sync from Supabase
+    try {
+      final synced = await SessionStorage.syncSessions();
+      if (mounted) {
+        setState(() {
+          _sessions = synced;
+        });
+        WidgetService.updateWidgets(sessions: _sessions);
+      }
+    } catch (e) {
+      debugPrint('Sessions sync failed: $e');
+    }
   }
 
   Widget _buildBody() {

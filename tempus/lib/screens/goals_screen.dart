@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 import '../models/weekly_goal.dart';
 import '../services/goal_storage.dart';
 import '../theme/app_theme.dart';
@@ -34,7 +35,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
     if (!_checkedPast) {
       _checkedPast = true;
-      _handleUnresolvedPastGoals();
+      await _handleUnresolvedPastGoals();
     }
 
     // 2. Background sync from Supabase
@@ -50,12 +51,12 @@ class _GoalsScreenState extends State<GoalsScreen> {
     }
   }
 
-  void _handleUnresolvedPastGoals() {
+  Future<void> _handleUnresolvedPastGoals() async {
     final unresolved = GoalStorage.unresolvedPastGoals(_currentMonday);
     if (unresolved.isEmpty || !mounted) return;
     for (final goal in unresolved) {
       if (!mounted) return;
-      _showMarkPastGoalDialog(goal);
+      await _showMarkPastGoalDialog(goal);
     }
     _load();
   }
@@ -112,9 +113,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
             color: AppTheme.primary,
             icon: Icons.check_circle_rounded,
             onTap: () {
-              goal.status = GoalStatus.complete;
-              goal.statusChangedAt = DateTime.now();
-              GoalStorage.updateGoal(goal);
+              GoalStorage.updateGoal(goal.copyWith(
+                status: GoalStatus.complete,
+                statusChangedAt: () => DateTime.now(),
+              ));
               Navigator.pop(ctx);
             },
           ),
@@ -123,9 +125,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
             color: Colors.amber,
             icon: Icons.timelapse_rounded,
             onTap: () {
-              goal.status = GoalStatus.inProgress;
-              goal.statusChangedAt = DateTime.now();
-              GoalStorage.updateGoal(goal);
+              GoalStorage.updateGoal(goal.copyWith(
+                status: GoalStatus.inProgress,
+                statusChangedAt: () => DateTime.now(),
+              ));
               Navigator.pop(ctx);
             },
           ),
@@ -134,9 +137,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
             color: Colors.redAccent,
             icon: Icons.cancel_rounded,
             onTap: () {
-              goal.status = GoalStatus.incomplete;
-              goal.statusChangedAt = DateTime.now();
-              GoalStorage.updateGoal(goal);
+              GoalStorage.updateGoal(goal.copyWith(
+                status: GoalStatus.incomplete,
+                statusChangedAt: () => DateTime.now(),
+              ));
               Navigator.pop(ctx);
             },
           ),
@@ -214,7 +218,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
     );
     if (result != null && result.isNotEmpty) {
       final goal = WeeklyGoal(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: const Uuid().v4(),
         goalText: result,
         weekStart: _currentMonday,
         createdAt: DateTime.now(),
@@ -270,9 +274,11 @@ class _GoalsScreenState extends State<GoalsScreen> {
   }
 
   Future<void> _markGoal(WeeklyGoal goal, GoalStatus status) async {
-    goal.status = status;
-    goal.statusChangedAt = DateTime.now();
-    await GoalStorage.updateGoal(goal);
+    final updated = goal.copyWith(
+      status: status,
+      statusChangedAt: () => DateTime.now(),
+    );
+    await GoalStorage.updateGoal(updated);
     await GoalStorage.clearSchedule();
     await _load();
     if (mounted) {

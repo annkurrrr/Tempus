@@ -313,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
 
     if (result == true) {
-      final nextNum = await SessionStorage.getNextSessionNumber();
+      final nextNum = SessionStorage.getNextSessionNumber();
       final now = DateTime.now();
       final session = Session(
         sessionNumber: nextNum,

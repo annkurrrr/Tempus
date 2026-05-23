@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/session.dart';
 import '../services/session_storage.dart';
-import '../services/session_sync_service.dart';
 import '../services/widget_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/session_grid_card.dart';
@@ -24,10 +23,7 @@ class SessionsScreen extends StatelessWidget {
     onSessionDeleted();
     // Refresh home screen widgets with updated data.
     WidgetService.updateWidgets(sessions: updatedSessions);
-    // Sync deletion to Supabase.
-    SessionSyncService.deleteSession(session.sessionNumber).catchError((e) {
-      debugPrint('Supabase delete sync failed: $e');
-    });
+
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -26,8 +26,8 @@ class WeeklyGoal {
   final String goalText;
   final DateTime weekStart; // Always a Monday (start of the goal week).
   final DateTime createdAt;
-  GoalStatus status;
-  DateTime? statusChangedAt;
+  final GoalStatus status;
+  final DateTime? statusChangedAt;
 
   WeeklyGoal({
     required this.id,
@@ -65,4 +65,26 @@ class WeeklyGoal {
 
   factory WeeklyGoal.decode(String source) =>
       WeeklyGoal.fromJson(jsonDecode(source) as Map<String, dynamic>);
+
+  /// Creates a copy of this goal with optional field overrides.
+  /// To explicitly set [statusChangedAt] to null, pass a function returning null:
+  /// `goal.copyWith(statusChangedAt: () => null)`
+  WeeklyGoal copyWith({
+    String? id,
+    String? goalText,
+    DateTime? weekStart,
+    DateTime? createdAt,
+    GoalStatus? status,
+    DateTime? Function()? statusChangedAt,
+  }) {
+    return WeeklyGoal(
+      id: id ?? this.id,
+      goalText: goalText ?? this.goalText,
+      weekStart: weekStart ?? this.weekStart,
+      createdAt: createdAt ?? this.createdAt,
+      status: status ?? this.status,
+      statusChangedAt:
+          statusChangedAt != null ? statusChangedAt() : this.statusChangedAt,
+    );
+  }
 }
